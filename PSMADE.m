@@ -18,9 +18,9 @@ it = 1;
 lb=ones(1,dim).*lb; % lower boundary
 ub=ones(1,dim).*ub; % upper boundary
 z=0.03; % parameter0.03
-beta_min=0.4; % 缩放因子下界 Lower Bound of Scaling Factor
-beta_max=1; % 缩放因子上界 Upper Bound of Scaling Factor
-pb=zeros(n,dim);  %记录每个个体的最优解
+beta_min=0.4; % Lower Bound of Scaling Factor
+beta_max=1; % Upper Bound of Scaling Factor
+pb=zeros(n,dim);  % Record the optimal solution for each individual
 pb_fit=inf*ones(n,1);
 taboo=[];
 
@@ -77,7 +77,7 @@ while  fes < Max_iteration
     
     if fes>0.8*Max_FEs
         %% Powell
-         %判断是否在禁忌表中
+         % Determine if it is in the Tabu List
         [M,~] = size(taboo);  
         flag = 0;
         for m = 1:M
@@ -86,7 +86,7 @@ while  fes < Max_iteration
             end
         end
         if flag==0
-            % 更新禁忌表
+            % Update the Tabu List
             taboo = [taboo;[Destination_position,Destination_fitness]];
             [xo,Ot,nS]=powell(fobj,Destination_position',0,1,lb,ub,-1,1e-6);
             xo = xo';
@@ -134,40 +134,40 @@ function [x,pb,all_fitness,pb_fit,tmp_fes] = funcDE(fobj,x,pb,all_fitness,pb_fit
      n = size(x,1);
      dim=size(x,2);
      tmp_fes=0;
-     for i=1:1:n % 遍历每个个体
-        tx=x(i,:); % 提取个体位置
+     for i=1:1:n % Iterate through each individual
+        tx=x(i,:); % Extract individual locations
   
-        % 随机选择三个个体以备变异使用
-        A=randperm(n); % 个体顺序重新随机排列
-        A(A==i)=[]; % 当前个体所排位置腾空（产生变异中间体时当前个体不参与）
+        % Three individuals are randomly selected for use in case of variation
+        A=randperm(n); % The order of the individuals is re-randomized
+        A(A==i)=[]; % The current individual is vacated (the current individual is not involved when the mutated intermediate is generated)
         a=A(1);b=A(2);c=A(3);
-        % 变异操作 Mutation   
+        % Mutation   
 %         T=4*Max_FEs;w=2*pi/T;beta=cos(w*fes)*(beta_max-beta_min)+beta_min;
-        beta=unifrnd(beta_min,beta_max,dim); % 随机产生缩放因子
+        beta=unifrnd(beta_min,beta_max,dim); % Randomly generate scaling factors
         y=zeros(1,dim);
         for j=1:dim
-            y(j)=pb(a,j)+beta(j)*(pb(b,j)-pb(c,j)); % 产生中间体
+            y(j)=pb(a,j)+beta(j)*(pb(b,j)-pb(c,j)); % Produce intermediates
         end
         
-        % 防止中间体越界
+        % Prevent intermediates from crossing boundaries
         y=max(y,lb);
 		y=min(y,ub);
         % 交叉操作 Crossover
-        tz=zeros(1,dim); % 初始化一个新个体
-        j0=randi([1,dim]); % 产生一个伪随机数，即选取待交换维度编号
+        tz=zeros(1,dim); % Initialize a new individual
+        j0=randi([1,dim]); % Generate a pseudo-random number, that is, select the dimension number to be exchanged
         CR=0.5*(1+rand());
-        for j=1:dim % 遍历每个维度
-            if j==j0 || rand<=CR % 如果当前维度是待交换维度或者随机概率小于交叉概率
-                tz(j)=y(j); % 新个体当前维度值等于中间体对应维度值
+        for j=1:dim % Traverse each dimension
+            if j==j0 || rand<=CR % If the current dimension is the dimension to be exchanged or the random probability is less than the crossover probability
+                tz(j)=y(j); % The current dimension value of the new individual is equal to the corresponding dimension value of the intermediate body
             else
-                tz(j)=tx(j); % 新个体当前维度值等于当前个体对应维度值
+                tz(j)=tx(j); % The current dimension value of the new individual is equal to the corresponding dimension value of the current individual
             end
         end
        
-        tz_fit=fobj(tz); % 新个体目标函数值
+        tz_fit=fobj(tz); % New individual objective function value
         tmp_fes=tmp_fes+1;
-        if tz_fit<all_fitness(i) % 如果新个体优于当前个体
-           x(i,:)=tz; % 更新当前个体
+        if tz_fit<all_fitness(i) % If the new individual is better than the current individual
+           x(i,:)=tz; % Update current individual
            all_fitness(i)=tz_fit;
         end
         if all_fitness(i)<pb_fit(i)
